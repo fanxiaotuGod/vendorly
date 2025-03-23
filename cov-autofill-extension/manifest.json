@@ -1,0 +1,15 @@
+{
+    "manifest_version": 3,
+    "name": "COV Auto Registration Filler",
+    "version": "1.0",
+    "description": "Auto-fills the Vancouver license registration form.",
+    "permissions": ["scripting", "activeTab"],
+    "host_permissions": ["https://cov.service-now.com/*"],
+    "content_scripts": [
+      {
+        "matches": ["https://cov.service-now.com/*"],
+        "js": ["content.js"]
+      }
+    ]
+  }
+  

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export default function LoginPage({ onLogin, goToSignUp }) {
+export default function LoginPage({ onLogin, goToSignUp, onGoogleSuccess }) {
+    const navigate = useNavigate();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
@@ -13,20 +16,57 @@ export default function LoginPage({ onLogin, goToSignUp }) {
         if (password.length < 8) newErrors.password = "Password must be at least 8 characters.";
 
         setErrors(newErrors);
-
         if (Object.keys(newErrors).length === 0) {
-            onLogin({ email, password });
+            onLogin({ email, password }, navigate);
         }
     };
+
+    const handleGoogleResponse = async (response) => {
+        try {
+            const res = await fetch("http://localhost:5001/api/google-login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ credential: response.credential }),
+            });
+            const result = await res.json();
+            if (res.ok) {
+                onGoogleSuccess(navigate);  // pass navigate so we can redirect after Google login
+            } else {
+                alert("Google login failed: " + result.message);
+            }
+        } catch (err) {
+            console.error("Google login error:", err);
+            alert("Google login failed.");
+        }
+    };
+
+    const handleGoogleError = () => {
+        console.error("Google Login Failed");
+        alert("Google Login Failed");
+    };
+
+    useEffect(() => {
+        /* global google */
+        if (window.google) {
+            window.google.accounts.id.initialize({
+                client_id: "231115086817-vh97b5sm1i9oovao3midev3o7fl2vlts.apps.googleusercontent.com", // Replace with your real Client ID
+                callback: handleGoogleResponse,
+            });
+
+            window.google.accounts.id.renderButton(
+                document.getElementById("googleBtn"),
+                { theme: "outline", size: "large", width: "100%" }
+            );
+        }
+    }, []);
 
     return (
         <div className="min-h-screen flex items-stretch">
             {/* Left: Login Form */}
             <div className="w-full md:w-1/2 bg-white relative px-6 min-h-screen overflow-hidden max-w-md mx-auto flex flex-col">
-                {/* Logo and Progress Bar */}
                 <div className="text-lg font-bold pt-16 pl-2 mb-8">vendorly</div>
 
-                {/* Fake Progress Bar */}
                 <div className="pl-2 mb-8">
                     <div className="flex gap-4">
                         <div className="w-36 h-1 rounded bg-black" />
@@ -35,7 +75,6 @@ export default function LoginPage({ onLogin, goToSignUp }) {
                     </div>
                 </div>
 
-                {/* Login Form */}
                 <div className="pt-8 pb-28 max-w-md">
                     <h2 className="text-xl font-semibold mb-6 text-left">Welcome Back</h2>
 
@@ -75,7 +114,7 @@ export default function LoginPage({ onLogin, goToSignUp }) {
                         )}
                     </div>
 
-                    {/* Login Button */}
+                    {/* Log In Button */}
                     <button
                         onClick={handleLogin}
                         className="w-full px-6 py-2 mt-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -83,11 +122,21 @@ export default function LoginPage({ onLogin, goToSignUp }) {
                         Log In
                     </button>
 
-                    {/* Create Account Link */}
+                    {/* Divider */}
+                    <div className="flex items-center my-4">
+                        <div className="flex-grow h-px bg-gray-300" />
+                        <span className="mx-2 text-sm text-gray-500">or</span>
+                        <div className="flex-grow h-px bg-gray-300" />
+                    </div>
+
+                    {/* Google Login */}
+                    <div id="googleBtn" className="flex justify-center" />
+
+                    {/* Sign Up Link */}
                     <div className="mt-4 text-center text-sm">
-                        Don't have an account?{' '}
+                        Don’t have an account?{" "}
                         <button
-                            onClick={goToSignUp}
+                            onClick={() => goToSignUp(navigate)}
                             className="text-blue-600 hover:underline font-medium"
                         >
                             Create account

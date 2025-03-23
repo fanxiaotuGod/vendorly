@@ -1,74 +1,87 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import Step1 from './components/Step1';
 import Step2 from './components/Step2';
 import Step3 from './components/Step3';
+import Dashboard from './components/Dashboard';
+import Planning from './components/Planning';
 
 function App() {
-    const [screen, setScreen] = useState("login"); // "login", "signup-step1", "signup-step2", "signup-step3"
     const [formData, setFormData] = useState({});
 
-    const goToStep = (step) => setScreen(step);
+    const handleLogin = async (credentials, navigate) => {
+        try {
+            const res = await fetch("http://localhost:5001/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(credentials),
+            });
 
-    const handleNextStep = () => {
-        if (screen === "signup-step1") setScreen("signup-step2");
-        else if (screen === "signup-step2") setScreen("signup-step3");
-    };
-
-    const handlePrevStep = () => {
-        if (screen === "signup-step3") setScreen("signup-step2");
-        else if (screen === "signup-step2") setScreen("signup-step1");
+            if (res.ok) {
+                navigate("/dashboard");
+            } else {
+                const err = await res.json();
+                alert("Login failed: " + err.message);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Server error. Could not log in.");
+        }
     };
 
     const handleFinalSubmit = () => {
         console.log("Submitted Data:", formData);
         alert("🎉 Signup complete!");
-        setScreen("login"); // Optionally return to login after signup
-    };
-
-    const handleLogin = (credentials) => {
-        console.log("Login Attempt:", credentials);
-        alert("✅ Logged in!");
-        // TODO: Authenticate with backend
     };
 
     return (
-        <>
-            {screen === "login" && (
-                <LoginPage
-                    onLogin={handleLogin}
-                    goToSignUp={() => setScreen("signup-step1")}
+        <Router>
+            <Routes>
+                <Route path="/" element={<Navigate to="/login" />} />
+                <Route
+                    path="/login"
+                    element={
+                        <LoginPage
+                            onLogin={handleLogin}
+                            goToSignUp={(navigate) => navigate('/signup/step1')}
+                            onGoogleSuccess={(navigate) => navigate('/dashboard')}
+                        />
+                    }
                 />
-            )}
-
-            {screen === "signup-step1" && (
-                <Step1
-                    formData={formData}
-                    setFormData={setFormData}
-                    nextStep={handleNextStep}
-                    prevStep={() => setScreen("login")} // 👈 Go back to login
+                <Route
+                    path="/signup/step1"
+                    element={
+                        <Step1
+                            formData={formData}
+                            setFormData={setFormData}
+                        />
+                    }
                 />
-            )}
-
-
-            {screen === "signup-step2" && (
-                <Step2
-                    formData={formData}
-                    setFormData={setFormData}
-                    nextStep={handleNextStep}
-                    prevStep={handlePrevStep}
+                <Route
+                    path="/signup/step2"
+                    element={
+                        <Step2
+                            formData={formData}
+                            setFormData={setFormData}
+                        />
+                    }
                 />
-            )}
-
-            {screen === "signup-step3" && (
-                <Step3
-                    formData={formData}
-                    setFormData={setFormData}
-                    prevStep={handlePrevStep}
-                    onSubmit={handleFinalSubmit}
+                <Route
+                    path="/signup/step3"
+                    element={
+                        <Step3
+                            formData={formData}
+                            setFormData={setFormData}
+                            onSubmit={handleFinalSubmit}
+                        />
+                    }
                 />
-            )}
-        </>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/planning" element={<Planning />} />
+            </Routes>
+        </Router>
     );
 }
 

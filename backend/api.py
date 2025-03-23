@@ -16,7 +16,6 @@ CORS(
 
 # Initialize the database
 create_users_table()
-CLIENT_ID = "231115086817-vh97b5sm1i9oovao3midev3o7fl2vlts.apps.googleusercontent.com"
 
 # Example: SQLite connection helper
 def get_db_connection():
